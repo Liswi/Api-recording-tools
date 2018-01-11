@@ -1,0 +1,30 @@
+    {
+    "name": "OneView Post Record",
+    "description" : "Record the Rest Api operation",
+    "version": "1.0",
+    "manifest_version": 2,
+    "options_page": "./option/option.html",
+    "permissions": [
+    "webRequest",
+    "activeTab",
+      "storage"
+  	],
+      "background":{
+        "scripts": ["scripts/bg.js"]
+      },
+      "browser_action": {
+      "default_popup": "./popup/popup.html",
+      "default_icon": "title.png",
+      "default_title": "Record OneView Rest Api"
+    },
+    "commands": {
+      "_execute_browser_action": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+F",
+          "mac": "MacCtrl+Shift+F"
+        },
+        "description": "Opens hello.html"
+      }
+    }
+    }
+  
