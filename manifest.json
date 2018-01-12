@@ -6,11 +6,13 @@
     "options_page": "./option/option.html",
     "permissions": [
     "webRequest",
+    "<all_urls>",
     "activeTab",
-      "storage"
+      "storage",
+      "notifications"
   	],
       "background":{
-        "scripts": ["scripts/bg.js"]
+        "scripts": ["./scripts/bg.js"]
       },
       "browser_action": {
       "default_popup": "./popup/popup.html",
