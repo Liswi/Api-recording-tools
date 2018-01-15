@@ -11,6 +11,8 @@ var recordingStatus = {
   startTime: null,
   stopTime: null,
   isStart : false,
+  recordingHost:null,
+  recordingData: {},
   actionTimer: function () {
     if(this.isStart) {
       this.startTime = new Date();
@@ -39,43 +41,59 @@ var recordingStatus = {
     }
   }
   chrome.notifications.create(opt);
-  },
-
-  recordingAipStart: function () {
-    chrome.webRequest.onBeforeRequest.addListener(
-      function(requestDetails){
-        if(requestDetails.method !== "GET") {
-          let buf = requestDetails.requestBody.raw[0].bytes;
-         arrayBufferToObj(buf).onload=function(){
-           console.log(1,JSON.parse(this.result));
-         }
-        }
-      },
-       {urls:["<all_urls>"]},
-       ["requestBody"]
-     );
-     
-     chrome.webRequest.onBeforeSendHeaders.addListener(
-       function(requestDetails){
-         if(requestDetails.method !== "GET") {
-           console.log(1.2, requestDetails);
-          console.log(2, requestDetails.requestHeaders);
-         }
-       },
-        {urls: ["<all_urls>"]},
-        ["requestHeaders"]
-      );
-     
-      chrome.webRequest.onCompleted.addListener(
-       function(requestDetails){
-         if(requestDetails.method !== "GET") {
-          console.log(3,requestDetails);
-         }
-       },
-        {urls: ["<all_urls>"]},
-        ["responseHeaders"]
-      );
   }
+}
+
+function recordingAipStart () {
+  chrome.webRequest.onBeforeRequest.addListener(
+    bodyListener,
+    {urls:["<all_urls>"]},
+    ["requestBody"]
+   ); 
+  chrome.webRequest.onBeforeSendHeaders.addListener(
+    headerListener,
+    {urls: ["<all_urls>"]},
+    ["requestHeaders"]
+    );
+}
+
+function recordingAipStop () {
+  chrome.webRequest.onBeforeRequest.removeListener(bodyListener); 
+  chrome.webRequest.onBeforeSendHeaders.removeListener(headerListener);
+  console.log(recordingStatus.recordingData);
+}
+
+function bodyListener (requestDetails) {
+    if (recordingStatus.recordingHost.indexOf(requestDetails.initiator) === -1) {
+      return;
+    };
+    if(requestDetails.method !== "GET") {
+      if(requestDetails.requestBody) {
+        let buf = requestDetails.requestBody.raw[0].bytes;
+        arrayBufferToObj(buf).onload=function(){
+          let requestBody = JSON.parse(this.result);
+          recordingStatus.recordingData[requestDetails.requestId].requestBody=requestBody;
+        }
+      }
+    }
+}
+
+function headerListener (requestDetails) {
+      if (recordingStatus.recordingHost.indexOf(requestDetails.initiator) === -1) {
+        return;
+      };
+       if(requestDetails.method !== "GET") {
+         console.log(requestDetails);
+        let requestHeaders = new Object;
+        requestDetails.requestHeaders.forEach(element => {
+          requestHeaders[element.name] = element.value;
+        })
+        recordingStatus.recordingData[requestDetails.requestId] = new Object;
+        recordingStatus.recordingData[requestDetails.requestId].requestHeaders = requestHeaders;
+        recordingStatus.recordingData[requestDetails.requestId].method = requestDetails.method;
+        recordingStatus.recordingData[requestDetails.requestId].url = requestDetails.url;
+        recordingStatus.recordingData[requestDetails.requestId].initiator = requestDetails.initiator;
+       }
 }
 
 function clickOperition () {
@@ -84,7 +102,7 @@ function clickOperition () {
   if (recordingStatus.isStart) {
     stopRecording(operition);
   } else {
-     startRecording(operition);
+    startRecording(operition);
   }
   recordingStatus.actionTimer();
   recordingStatus.notific();
@@ -101,30 +119,35 @@ function checkStatus () {
      popup.document.body.innerHTML="<h2>Sorry, This page seem to be not supported.<h2>";
       return;
     }
-   
+      recordingStatus.recordingHost = tabs[0].url;
      let operition =  popup.document.querySelector("#operition");
     if (!recordingStatus.isStart) {
-      operition.querySelector('span').innerText = "Start Recording"
-       operition.querySelector('img').src='img/play-button.png';
+      operition.querySelector('span').innerText = "Start Recording";
+      operition.style.backgroundColor = "rgb(152, 202, 190)";
+      operition.querySelector('img').src='img/play-button.png';
    } else {
-       operition.querySelector('span').innerText = "Stop Recording"
+       operition.querySelector('span').innerText = "Stop Recording";
+       operition.style.backgroundColor = "rgb(228,157,6)";
        operition.querySelector('img').src='img/pause-button.png';
    }
   })
 }
 
 function startRecording (element) {
-  recordingStatus.recordingAipStart ()
+  recordingAipStart()
   chrome.browserAction.setIcon({path: "recording.png"});
   chrome.browserAction.setBadgeText({text: "||"});
+  element.style.backgroundColor = "rgb(228,157,6)"
   element.querySelector('span').innerText = "Stop Recording"
   element.querySelector('img').src='img/pause-button.png';
   recordingStatus.isStart = !recordingStatus.isStart;
 }
 
 function stopRecording (element) {
+  recordingAipStop();
   chrome.browserAction.setIcon({path:"title.png"});
   chrome.browserAction.setBadgeText({text: ""});
+  element.style.backgroundColor = "rgb(152, 202, 190)"
   element.querySelector('span').innerText = "Start Recording"
   element.querySelector('img').src='img/play-button.png';
   recordingStatus.isStart = !recordingStatus.isStart;
