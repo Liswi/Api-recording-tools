@@ -2,9 +2,9 @@ chrome.runtime.onInstalled.addListener(function(detail){
   chrome.notifications.create({
     type: "basic",
     iconUrl:"popup/img/hpe.svg",
-    title:"Tnanks you",
-  message: "Good Boy",
-  contextMessage:" From OneView Api Recording"});
+    title:"OneView Api tools",
+  message: "Thanks for your install",
+  contextMessage:"Hewlett Packard Enterprise "});
 })
 
 var recordingStatus = {
@@ -27,17 +27,17 @@ var recordingStatus = {
     opt = {
       type: "basic",
     iconUrl:"popup/img/hpe.svg",
-    title:"Start Recording",
-  message: "",
-  contextMessage:" From OneView Api Recording"
+    title:"OneView Api tools",
+  message: "Recording  start",
+  contextMessage:" Hewlett Packard Enterprise"
     }
   } else {
     opt = {
       type: "basic",
     iconUrl:"popup/img/hpe.svg",
-    title:"Stop Recording",
-  message: "",
-  contextMessage:" From OneView Api Recording"
+    title:"OneView Api tools",
+  message: "Recording stop",
+  contextMessage:" Hewlett Packard Enterprise"
     }
   }
   chrome.notifications.create(opt);
@@ -64,7 +64,7 @@ function recordingAipStop () {
 }
 
 function bodyListener (requestDetails) {
-    if (recordingStatus.recordingHost.indexOf(requestDetails.initiator) === -1) {
+    if (recordingStatus.recordingHost.split("/")[2] !== requestDetails.url.split('/')[2]) {
       return;
     };
     if(requestDetails.method !== "GET") {
@@ -79,7 +79,7 @@ function bodyListener (requestDetails) {
 }
 
 function headerListener (requestDetails) {
-      if (recordingStatus.recordingHost.indexOf(requestDetails.initiator) === -1) {
+      if (recordingStatus.recordingHost.split("/")[2] !== requestDetails.url.split('/')[2]) {
         return;
       };
        if(requestDetails.method !== "GET") {
@@ -89,10 +89,12 @@ function headerListener (requestDetails) {
           requestHeaders[element.name] = element.value;
         })
         recordingStatus.recordingData[requestDetails.requestId] = new Object;
-        recordingStatus.recordingData[requestDetails.requestId].requestHeaders = requestHeaders;
+        recordingStatus.recordingData[requestDetails.requestId].timeStamp=requestDetails.timeStamp;
+        recordingStatus.recordingData[requestDetails.requestId].requestId = requestDetails.requestId;
         recordingStatus.recordingData[requestDetails.requestId].method = requestDetails.method;
         recordingStatus.recordingData[requestDetails.requestId].url = requestDetails.url;
-        recordingStatus.recordingData[requestDetails.requestId].initiator = requestDetails.initiator;
+        recordingStatus.recordingData[requestDetails.requestId].requestHeaders = requestHeaders;
+        
        }
 }
 
